@@ -87,9 +87,12 @@ nano-invoice refund-hint --invoice inv_...     # {to, amount_raw, reason, source
 ## Receipts you can hand back
 
 A receipt lists the fields and the exact `block_info` calls that reproduce the
-claim, so the buyer (or a third party) re-derives it from any public node without
-trusting you. The block IS the receipt: public, un-revocable, feeless, readable
-by any agent that can call an RPC.
+**payment** claim, so the buyer (or a third party) re-derives from any public
+node that a confirmed send of exactly `pay_raw` went from the sender to you. No
+trust in you is needed for that half.
+
+The receipt does **not** prove by itself which order that payment was for. See
+the trust boundary below before you tell anyone it does.
 
 ## Boundaries, stated plainly
 
@@ -101,9 +104,16 @@ by any agent that can call an RPC.
   that reports no timestamp cannot prove timing and such blocks are ignored.
 - The scan reads at most 1000 history entries per check; a busy merchant should
   check often or use a dedicated receiving account.
-- The receipt proves a confirmed send of exactly `pay_raw` from sender to
-  merchant. That it meant *this order* rests on the tag allocation, which anyone
-  holding the order key can re-derive.
+- **Trust boundary of a receipt.** The ledger authenticates one thing: a
+  confirmed send of exactly `pay_raw` from sender to merchant. It does not
+  authenticate the order. The tag in the amount is allocated at random by the
+  issuer and stored in the issuer's local database; the order key reproduces
+  only the invoice identifier, not the tag. An issuer could therefore relabel
+  `order_key_sha256` and the matching `invoice_id` on a receipt and the payment
+  would still verify. So: the buyer must keep the invoice it was given **before
+  paying** (invoice id, order key hash, `pay_raw`, merchant account) and compare
+  a receipt against that copy. A receipt that verifies on the ledger but does
+  not match a previously agreed invoice proves a payment, not an order.
 
 ## Source
 
